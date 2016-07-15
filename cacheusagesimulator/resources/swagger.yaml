@@ -1,0 +1,22 @@
+---
+swagger: "2.0"
+info:
+  version: "0.1.0"
+  title: "Block cache simulator API"
+basePath: "/"
+paths:
+  /:
+    get:
+      summary: "Gets next block to go in the cache"
+      operationId: "cacheusagesimulator.api_controller.block_next_get"
+      produces:
+        - "application/octet-stream"
+      parameters: []
+      responses:
+        200:
+          description: "Blocks to go in the cache"
+          schema:
+            # This issue stops the type "file" from correctly being used:
+            # https://github.com/Yelp/swagger_spec_validator/issues/50
+#           type: file
+            type: number

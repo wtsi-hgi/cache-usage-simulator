@@ -1,1 +1,2 @@
 git+https://github.com/wtsi-hgi/cache-analysis.git@master#egg=cacheanalysis
+connexion==1.0.103
