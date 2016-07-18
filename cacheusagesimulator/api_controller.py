@@ -1,11 +1,14 @@
-from cacheanalysis.models import BlockFile, CacheMissRecord, CacheHitRecord
+from typing import Dict
+
 from hgijson import MappingJSONEncoderClassBuilder, JsonPropertyMapping
 
+from cacheanalysis.models import BlockFile, CacheMissRecord, CacheHitRecord
 from cacheusagesimulator.file_generator import BlockFileGenerator
 from cacheusagesimulator.usage_generator import UsageGenerator
 
 _block_file_generator = BlockFileGenerator(blocks_per_file_spread=0)
-_usage_generator = UsageGenerator().generate()
+_usage_generator = UsageGenerator()
+_cache_misses = dict()    # type: Dict[str, CacheMissRecord]
 
 
 BlockFileJSONEncoder = MappingJSONEncoderClassBuilder(
@@ -23,6 +26,13 @@ def get_random_block_file() -> dict:
 
 def get_next_block() -> dict:
     while True:
-        record = next(_usage_generator)
+        record = _usage_generator.generate()
+        if isinstance(record, CacheMissRecord):
+            if record.block_hash not in _cache_misses:
+                _cache_misses[record.block_hash] = record
+
         if isinstance(record, CacheHitRecord) or isinstance(record, CacheMissRecord):
-            return {"hash": record.block_hash}
+            return {
+                "hash": record.block_hash,
+                "size": _cache_misses[record.block_hash].block_size
+            }

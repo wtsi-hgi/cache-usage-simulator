@@ -48,10 +48,11 @@ class UsageGenerator:
         self.probability_file_is_reference = probability_file_is_reference
         self.max_cache_size = max_cache_size
 
+        self.known_reference_files = []  # type: List[BlockFile]
+        self.known_non_reference_files = []  # type: List[BlockFile]
+
         # Note: You will probably need internal variables such as these - please feel free to change them though!
         self._file_generator = BlockFileGenerator()
-        self._known_reference_files = []  # type: List[BlockFile]
-        self._known_non_reference_files = []  # type: List[BlockFile]
         self._unknown_files = []  # type: List[BlockFile]
         self._blocks_in_cache = []  # type: List[str]
         self._current_file = None  # type: Optional[BlockFile]
@@ -62,16 +63,21 @@ class UsageGenerator:
             self._unknown_files.append(self._file_generator.create_random_file())
         if False:
             if random.random() < self.probability_file_is_reference:
-                self._known_reference_files.append(self._file_generator.create_random_file())
+                self.known_reference_files.append(self._file_generator.create_random_file())
             else:
-                self._known_non_reference_files.append(self._file_generator.create_random_file())
+                self.known_non_reference_files.append(self._file_generator.create_random_file())
         self._time = datetime(year=2000, month=1, day=1)
 
-    def generate(self) -> Generator:
+        self._generator = self._create_generator()
+
+    def generate(self) -> Record:
         """
         Randomly generates the next record to simulate usage of a cache.
         :return: the next record
         """
+        return next(self._generator)
+
+    def _create_generator(self) -> Generator:
         # pick random file to read from
         #   if probability_file_is_reference or average_block_reads_between_reference_read has passed, make it a reference
         # pick random number of blocks to read
@@ -93,19 +99,19 @@ class UsageGenerator:
                     if len(self._unknown_files) > 0:
                         # still files that haven't been read, read one of them next
                         self._current_file = self._unknown_files.pop()
-                        self._known_reference_files.append(self._current_file)
+                        self.known_reference_files.append(self._current_file)
                     else:
                         # all files have been read, pick a random file to read next
-                        self._current_file = random.choice(self._known_reference_files)
+                        self._current_file = random.choice(self.known_reference_files)
                 else:
                     # read a non-reference file
                     if random.random() > self.known_file_reread_probability and len(self._unknown_files) > 0:
                         # we should not reread a known file
-                        self._known_non_reference_files.append(self._unknown_files.pop())
-                        self._current_file = self._known_non_reference_files[-1]
+                        self.known_non_reference_files.append(self._unknown_files.pop())
+                        self._current_file = self.known_non_reference_files[-1]
                     else:
                         # we should read an existing file (maybe there are no unknown files left)
-                        self._current_file = random.choice(self._known_non_reference_files)
+                        self._current_file = random.choice(self.known_non_reference_files)
                 while True:
                     self._blocks_to_read = ceil(
                         len(self._current_file.block_hashes) * random.gauss(

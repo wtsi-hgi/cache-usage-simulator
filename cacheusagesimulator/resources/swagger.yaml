@@ -43,3 +43,6 @@ definitions:
       hash:
         type: string
         description: Hash of the block
+      size:
+        type: number
+        description: Size of the block
