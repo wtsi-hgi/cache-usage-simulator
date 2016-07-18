@@ -16,6 +16,28 @@ paths:
           description: Block file
           schema:
             $ref: "#/definitions/BlockFile"
+  /blockfile/references:
+    get:
+      summary: Gets all of the reference files
+      operationId: cacheusagesimulator.api_controller.get_reference_files
+      responses:
+        200:
+          description: Reference files
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/BlockFile"
+  /blockfile/non-references:
+    get:
+      summary: Gets all of non-reference files
+      operationId: cacheusagesimulator.api_controller.get_non_reference_files
+      responses:
+        200:
+          description: Non-reference files
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/BlockFile"
   /block/next:
     get:
       summary: Gets the next block to be used according to the simulation
@@ -25,28 +47,6 @@ paths:
           description: Next block
           schema:
             $ref: "#/definitions/Block"
-  /block/references:
-    get:
-      summary: Gets all of the blocks that make up reference files
-      operationId: cacheusagesimulator.api_controller.get_reference_blocks
-      responses:
-        200:
-          description: Blocks that make up reference files
-          schema:
-            type: array
-            items:
-              $ref: "#/definitions/Block"
-  /block/non-references:
-    get:
-      summary: Gets all of the blocks that are not in non-reference files
-      operationId: cacheusagesimulator.api_controller.get_non_reference_blocks
-      responses:
-        200:
-          description: Blocks that make up non-reference files
-          schema:
-            type: array
-            items:
-              $ref: "#/definitions/Block"
 definitions:
   BlockFile:
     type: object
