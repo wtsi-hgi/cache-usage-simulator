@@ -23,7 +23,7 @@ class BlockFileGenerator:
         :param bytes_per_block: the total number of bytes in a block (must be >0)
         :param mean_blocks_per_file: the mean number of blocks in a file (must be >0)
         :param blocks_per_file_spread: the spread in a normal distribution for the number of blocks
-        in a file (must be >0 and should be <(mean_blocks_per_file/3) - having it higher than
+        in a file (should be <(mean_blocks_per_file/3) - having it higher than
         that is likely to cause files of 0 length to be generated)
         """
         self.bytes_per_block = bytes_per_block
@@ -46,4 +46,4 @@ class BlockFileGenerator:
         Creates a random block of bytes.
         :return: the generated block
         """
-        pass
+        return bytearray((random.getrandbits(8) for i in range(self.bytes_per_block)))
