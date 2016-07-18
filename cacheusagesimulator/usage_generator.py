@@ -103,6 +103,7 @@ class UsageGenerator:
                     else:
                         # all files have been read, pick a random file to read next
                         self._current_file = random.choice(self.known_reference_files)
+                    self._total_blocks_read = 0
                 else:
                     # read a non-reference file
                     if random.random() > self.known_file_reread_probability and len(self._unknown_files) > 0:
