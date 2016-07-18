@@ -2,30 +2,44 @@
 swagger: "2.0"
 info:
   version: "0.1.0"
-  title: "Block cache simulator API"
-basePath: "/"
+  title: Block cache simulator API
+basePath: /v1
+produces:
+  - application/json
 paths:
-  /:
+  /blockfile/random:
     get:
-      tags:
-      - "default_controller"
-      summary: "Gets next block file"
-      operationId: "cacheusagesimulator.api_controller.block_next_get"
-      parameters: []
+      summary: Gets a random block file
+      operationId: cacheusagesimulator.api_controller.get_random_block_file
       responses:
         200:
-          description: "Blocks file"
+          description: Block file
           schema:
             $ref: "#/definitions/BlockFile"
+  /block/next:
+    get:
+      summary: Gets the next block to be used according to the simulation
+      operationId: cacheusagesimulator.api_controller.get_next_block
+      responses:
+        200:
+          description: Next block
+          schema:
+            $ref: "#/definitions/Block"
 definitions:
   BlockFile:
-    type: "object"
+    type: object
     properties:
       name:
-        type: "string"
-        description: "Name of the block file"
+        type: string
+        description: Name of the block file
       blocks:
-        type: "array"
-        description: "Hashes of the blocks that make up the block file"
+        type: array
         items:
-          type: "string"
+          type: string
+        description: Hashes of the blocks that make up the block file
+  Block:
+    type: object
+    properties:
+      hash:
+        type: string
+        description: Hash of the block

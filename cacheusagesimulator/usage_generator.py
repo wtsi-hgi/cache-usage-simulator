@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from math import ceil
 import random
-from typing import List, Optional
+from typing import List, Optional, Generator
 
 from cacheanalysis.models import BlockFile
 from cacheanalysis.models import Record, CacheMissRecord, CacheHitRecord, CacheDeleteRecord
@@ -67,7 +67,7 @@ class UsageGenerator:
                 self._known_non_reference_files.append(self._file_generator.create_random_file())
         self._time = datetime(year=2000, month=1, day=1)
 
-    def generate(self) -> Record:
+    def generate(self) -> Generator:
         """
         Randomly generates the next record to simulate usage of a cache.
         :return: the next record
