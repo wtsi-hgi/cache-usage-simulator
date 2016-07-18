@@ -1,5 +1,4 @@
 from math import ceil
-from random import getrandbits
 
 ONE_MB = 1 * 1024 * 1024
 ONE_GB = ONE_MB * 1024

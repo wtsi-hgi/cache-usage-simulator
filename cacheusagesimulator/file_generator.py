@@ -1,12 +1,14 @@
 import random
 
 from cacheanalysis.models import BlockFile
+from math import ceil
 
-from cacheusagesimulator._common import *
+from cacheusagesimulator._common import DEFAULT_BLOCKS_PER_FILE,  DEFAULT_BLOCK_SIZE, \
+    DEFAULT_BLOCKS_PER_FILE_SPREAD
 
 
 def md5() -> str:
-    return "{:032x}".format(getrandbits(128))
+    return "{:032x}".format(random.getrandbits(128))
 
 
 class BlockFileGenerator:
