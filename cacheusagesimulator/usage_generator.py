@@ -34,7 +34,7 @@ class UsageGenerator:
         reference when it is accessed (using some distribution and some measure of average)
         :param known_file_reread_probability: the probability that a non-reference file that has been read before will be
         read again
-        :param number_of_files: the number of files to generate
+        :param number_of_files: the number of files to generate (must be >1)
         :param probability_file_is_reference: the probability a file is a reference file
         :param max_cache_size: the maximum cache size in blocks
         """
@@ -61,11 +61,9 @@ class UsageGenerator:
         self._total_blocks_read = 0
         for i in range(self.number_of_files):
             self._unknown_files.append(self._file_generator.create_random_file())
-        if False:
-            if random.random() < self.probability_file_is_reference:
-                self.known_reference_files.append(self._file_generator.create_random_file())
-            else:
-                self.known_non_reference_files.append(self._file_generator.create_random_file())
+        # ensure we have at least one reference and one non-reference file
+        self.known_reference_files.append(self._unknown_files.pop())
+        self.known_non_reference_files.append(self._unknown_files.pop())
         self._time = datetime(year=2000, month=1, day=1)
 
         self._generator = self._create_generator()
@@ -108,8 +106,8 @@ class UsageGenerator:
                     # read a non-reference file
                     if random.random() > self.known_file_reread_probability and len(self._unknown_files) > 0:
                         # we should not reread a known file
-                        self.known_non_reference_files.append(self._unknown_files.pop())
-                        self._current_file = self.known_non_reference_files[-1]
+                        self._current_file = self._unknown_files.pop()
+                        self.known_non_reference_files.append(self._current_file)
                     else:
                         # we should read an existing file (maybe there are no unknown files left)
                         self._current_file = random.choice(self.known_non_reference_files)
@@ -121,6 +119,7 @@ class UsageGenerator:
                         )
                     )
                     try:
+                        # pick a random index in the file to start reading blocks from
                         self._current_file_index = random.randrange(
                             len(self._current_file.block_hashes)
                             - self._blocks_to_read)
@@ -128,6 +127,8 @@ class UsageGenerator:
                         # argument to random.randrange == 0, so we must start reading at the start of the file
                         self._current_file_index = 0
                     if self._blocks_to_read + self._current_file_index >= len(self._current_file.block_hashes):
+                        # from the current index in the file, reading self._blocks_to_read blocks is impossible
+                        # this is very unlikely
                         continue
                     else:
                         break
@@ -144,11 +145,11 @@ class UsageGenerator:
                 else:
                     # block is not in cache
                     if len(self._blocks_in_cache) >= self.max_cache_size:
-                        # cache too big, remove a random block from it
-                        yield CacheDeleteRecord(self._blocks_in_cache.pop(
-                            random.randrange(len(self._blocks_in_cache))), self._time)
-                    self._blocks_in_cache.append(
-                        self._current_file.block_hashes[self._current_file_index])
+                        # cache too big
+                        # block_index_to_delete = random.randrange(len(self._blocks_in_cache))
+                        block_index_to_delete = 0
+                        yield CacheDeleteRecord(self._blocks_in_cache.pop(block_index_to_delete), self._time)
+                    self._blocks_in_cache.append(self._current_file.block_hashes[self._current_file_index])
                     self._blocks_to_read -= 1
                     self._current_file_index += 1
                     self._total_blocks_read += 1
