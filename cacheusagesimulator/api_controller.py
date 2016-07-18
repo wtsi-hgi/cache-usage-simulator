@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List, Iterable, Set
 
 from hgijson import MappingJSONEncoderClassBuilder, JsonPropertyMapping
 
@@ -32,7 +32,20 @@ def get_next_block() -> dict:
                 _cache_misses[record.block_hash] = record
 
         if isinstance(record, CacheHitRecord) or isinstance(record, CacheMissRecord):
-            return {
-                "hash": record.block_hash,
-                "size": _cache_misses[record.block_hash].block_size
-            }
+            return record.block_hash
+
+
+def get_reference_blocks() -> List[dict]:
+    return list(_get_block_hashes_from_files(_usage_generator.known_reference_files))
+
+
+def get_non_reference_blocks() -> List[dict]:
+    return list(_get_block_hashes_from_files(_usage_generator.known_non_reference_files))
+
+
+def _get_block_hashes_from_files(files: Iterable[BlockFile]) -> Set[str]:
+    blocks = set()
+    for blockfile in files:
+        for block_hash in blockfile.block_hashes:
+            blocks.add(block_hash)
+    return list(blocks)

@@ -25,6 +25,28 @@ paths:
           description: Next block
           schema:
             $ref: "#/definitions/Block"
+  /block/references:
+    get:
+      summary: Gets all of the blocks that make up reference files
+      operationId: cacheusagesimulator.api_controller.get_reference_blocks
+      responses:
+        200:
+          description: Blocks that make up reference files
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Block"
+  /block/non-references:
+    get:
+      summary: Gets all of the blocks that are not in non-reference files
+      operationId: cacheusagesimulator.api_controller.get_non_reference_blocks
+      responses:
+        200:
+          description: Blocks that make up non-reference files
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Block"
 definitions:
   BlockFile:
     type: object
@@ -33,16 +55,9 @@ definitions:
         type: string
         description: Name of the block file
       blocks:
+        description:  Blocks that make up the block file
         type: array
         items:
-          type: string
-        description: Hashes of the blocks that make up the block file
+          $ref: "#/definitions/Block"
   Block:
-    type: object
-    properties:
-      hash:
-        type: string
-        description: Hash of the block
-      size:
-        type: number
-        description: Size of the block
+    type: string
