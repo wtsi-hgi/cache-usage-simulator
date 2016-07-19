@@ -6,6 +6,7 @@ from typing import List, Optional, Generator
 from cacheanalysis.models import BlockFile
 from cacheanalysis.models import Record, CacheMissRecord, CacheHitRecord, CacheDeleteRecord
 
+from cacheusagesimulator._common import DEFAULT_BLOCK_SIZE
 from cacheusagesimulator.file_generator import BlockFileGenerator
 
 
@@ -51,7 +52,6 @@ class UsageGenerator:
         self.known_reference_files = []  # type: List[BlockFile]
         self.known_non_reference_files = []  # type: List[BlockFile]
 
-        # Note: You will probably need internal variables such as these - please feel free to change them though!
         self._file_generator = BlockFileGenerator()
         self._unknown_files = []  # type: List[BlockFile]
         self._blocks_in_cache = []  # type: List[str]
@@ -61,7 +61,8 @@ class UsageGenerator:
         self._total_blocks_read = 0
         for i in range(self.number_of_files):
             self._unknown_files.append(self._file_generator.create_random_file())
-        # ensure we have at least one reference and one non-reference file
+        # Ensure we have at least one reference and one non-reference file in order to avoid random
+        # errors later.
         self.known_reference_files.append(self._unknown_files.pop())
         self.known_non_reference_files.append(self._unknown_files.pop())
         self._time = datetime(year=2000, month=1, day=1)
@@ -91,51 +92,54 @@ class UsageGenerator:
         #       CacheMissRecord for new block
         while True:
             if self._blocks_to_read <= 0:
-                # finished reading a file
+                # Finished reading a file.
                 if random.random() < self.probability_file_is_reference or self._total_blocks_read >= self.average_block_reads_between_reference_read:
-                    # read a reference file
+                    # Read a reference file.
                     if len(self._unknown_files) > 0:
-                        # still files that haven't been read, read one of them next
+                        # There are still files that haven't been read, read one of them next.
                         self._current_file = self._unknown_files.pop()
                         self.known_reference_files.append(self._current_file)
                     else:
-                        # all files have been read, pick a random file to read next
+                        # All files have been read, pick a random file to read next.
                         self._current_file = random.choice(self.known_reference_files)
                     self._total_blocks_read = 0
                 else:
-                    # read a non-reference file
+                    # Read a non-reference file.
                     if random.random() > self.known_file_reread_probability and len(self._unknown_files) > 0:
-                        # we should not reread a known file
+                        # Do not reread a known file.
                         self._current_file = self._unknown_files.pop()
                         self.known_non_reference_files.append(self._current_file)
                     else:
-                        # we should read an existing file (maybe there are no unknown files left)
+                        # Read an existing file (either randomness dictates that we should reread a
+                        # file or there are no unknown files left).
                         self._current_file = random.choice(self.known_non_reference_files)
                 while True:
                     self._blocks_to_read = ceil(
-                        len(self._current_file.block_hashes) * random.gauss(
+                        len(self._current_file.block_hashes)
+                        * random.gauss(
                             self.average_proportion_of_blocks_read_when_sequential_read,
-                            self.average_proportion_of_blocks_read_when_sequential_read / 4
+                            self.average_proportion_of_blocks_read_when_sequential_read / 2
                         )
                     )
-                    try:
-                        # pick a random index in the file to start reading blocks from
-                        self._current_file_index = random.randrange(
-                            len(self._current_file.block_hashes)
-                            - self._blocks_to_read)
-                    except ValueError:
-                        # argument to random.randrange == 0, so we must start reading at the start of the file
-                        self._current_file_index = 0
-                    if self._blocks_to_read + self._current_file_index >= len(self._current_file.block_hashes):
-                        # from the current index in the file, reading self._blocks_to_read blocks is impossible
-                        # this is very unlikely
+                    if self._blocks_to_read >= len(self._current_file.block_hashes):
+                        # From the current index in the file, reading enough blocks is impossible;
+                        # this is very unlikely, but causes issues if it isn't caught.
                         continue
                     else:
                         break
+                try:
+                    # Pick a random index in the file to start reading blocks from.
+                    self._current_file_index = random.randrange(
+                        len(self._current_file.block_hashes)
+                        - self._blocks_to_read
+                    )
+                except ValueError:
+                    # To read enough blocks, reading must start at the start of the file.
+                    self._current_file_index = 0
             while self._blocks_to_read > 0:
                 self._time += timedelta(days=1)
                 if self._current_file.block_hashes[self._current_file_index] in self._blocks_in_cache:
-                    # block is in cache
+                    # The current block is in the cache.
                     self._blocks_to_read -= 1
                     self._current_file_index += 1
                     self._total_blocks_read += 1
@@ -143,9 +147,9 @@ class UsageGenerator:
                         self._current_file.block_hashes[self._current_file_index - 1],
                         self._time)
                 else:
-                    # block is not in cache
+                    # The current block is not in the cache.
                     if len(self._blocks_in_cache) >= self.max_cache_size:
-                        # cache too big
+                        # The cache is too big to append to it.
                         # block_index_to_delete = random.randrange(len(self._blocks_in_cache))
                         block_index_to_delete = 0
                         yield CacheDeleteRecord(self._blocks_in_cache.pop(block_index_to_delete), self._time)
@@ -156,5 +160,5 @@ class UsageGenerator:
                     yield CacheMissRecord(
                         self._current_file.block_hashes[self._current_file_index - 1],
                         self._time,
-                        64 * 1024**2  # 64 MB
+                        DEFAULT_BLOCK_SIZE
                     )
