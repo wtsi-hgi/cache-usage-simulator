@@ -39,7 +39,7 @@ class UsageGenerator:
         :param max_cache_size: the maximum cache size in blocks
         """
         self.average_proportion_of_blocks_read_when_sequential_read = average_proportion_of_blocks_read_when_sequential_read
-        self.average_block_reads_between_reference_block_read = average_block_reads_between_reference_read \
+        self.average_block_reads_between_reference_read = average_block_reads_between_reference_read \
             if average_block_reads_between_reference_read is not None \
             else file_generator.mean_blocks_per_file * 25
         self.average_proportion_of_block_reads_on_reference_access = average_proportion_of_block_reads_on_reference_access
@@ -92,7 +92,7 @@ class UsageGenerator:
         while True:
             if self._blocks_to_read <= 0:
                 # finished reading a file
-                if random.random() < self.probability_file_is_reference or self._total_blocks_read >= self.average_block_reads_between_reference_block_read:
+                if random.random() < self.probability_file_is_reference or self._total_blocks_read >= self.average_block_reads_between_reference_read:
                     # read a reference file
                     if len(self._unknown_files) > 0:
                         # still files that haven't been read, read one of them next
@@ -156,5 +156,5 @@ class UsageGenerator:
                     yield CacheMissRecord(
                         self._current_file.block_hashes[self._current_file_index - 1],
                         self._time,
-                        64 * 1024 ** 2  # 64 MB
+                        64 * 1024**2  # 64 MB
                     )
