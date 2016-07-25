@@ -14,15 +14,14 @@ class UsageGenerator:
     """
     Generates simulated records indicating the usage of a cache.
     """
-
-    def __init__(self, file_generator: BlockFileGenerator = BlockFileGenerator(),
-                 average_proportion_of_blocks_read_when_sequential_read: float = 0.5,
-                 average_block_reads_between_reference_read: float = None,
-                 average_proportion_of_block_reads_on_reference_access: float = 1.0,
-                 known_file_reread_probability: float = 0.1,
-                 number_of_files: int = 40,
-                 probability_file_is_reference: float = 0.1,
-                 max_cache_size: int = 1000):
+    def __init__(self, file_generator: BlockFileGenerator=BlockFileGenerator(),
+                 average_proportion_of_blocks_read_when_sequential_read: float=0.5,
+                 average_block_reads_between_reference_read: float=None,
+                 average_proportion_of_block_reads_on_reference_access: float=1.0,
+                 known_file_reread_probability: float=0.1,
+                 number_of_files: int=40,
+                 reference_file_proportion: float=0.1,
+                 max_cache_size: int=1000):
         """
         Constructor.
         :param file_generator: the block file generator
@@ -36,17 +35,17 @@ class UsageGenerator:
         :param known_file_reread_probability: the probability that a non-reference file that has been read before will be
         read again
         :param number_of_files: the number of files to generate (must be >1)
-        :param probability_file_is_reference: the probability a file is a reference file
+        :param reference_file_proportion: the proportion of files that are reference files
         :param max_cache_size: the maximum cache size in blocks
         """
         self.average_proportion_of_blocks_read_when_sequential_read = average_proportion_of_blocks_read_when_sequential_read
-        self.average_block_reads_between_reference_read = average_block_reads_between_reference_read \
-            if average_block_reads_between_reference_read is not None \
-            else file_generator.mean_blocks_per_file * 25
+        self.average_block_reads_between_reference_read = (average_block_reads_between_reference_read
+            if average_block_reads_between_reference_read is not None
+            else file_generator.mean_blocks_per_file * 25)
         self.average_proportion_of_block_reads_on_reference_access = average_proportion_of_block_reads_on_reference_access
         self.known_file_reread_probability = known_file_reread_probability
         self.number_of_files = number_of_files
-        self.probability_file_is_reference = probability_file_is_reference
+        self.reference_file_proportion = reference_file_proportion
         self.max_cache_size = max_cache_size
 
         self.known_reference_files = []  # type: List[BlockFile]
@@ -59,7 +58,7 @@ class UsageGenerator:
         self._current_file_index = 0
         self._blocks_to_read = 0
         self._total_blocks_read = 0
-        for i in range(self.number_of_files):
+        for _ in range(self.number_of_files):
             self._unknown_files.append(self._file_generator.create_random_file())
         # Ensure we have at least one reference and one non-reference file in order to avoid random
         # errors later.
@@ -78,7 +77,7 @@ class UsageGenerator:
 
     def _create_generator(self) -> Generator:
         # pick random file to read from
-        #   if probability_file_is_reference or average_block_reads_between_reference_read has passed, make it a reference
+        #   if reference_file_proportion or average_block_reads_between_reference_read has passed, make it a reference
         # pick random number of blocks to read
         #   average_proportion_of_blocks_read_when_sequential_read on first (sequential) read
         # pick random place in file to read from
@@ -93,7 +92,7 @@ class UsageGenerator:
         while True:
             if self._blocks_to_read <= 0:
                 # Finished reading a file.
-                if random.random() < self.probability_file_is_reference or self._total_blocks_read >= self.average_block_reads_between_reference_read:
+                if random.random() < self.reference_file_proportion or self._total_blocks_read >= self.average_block_reads_between_reference_read:
                     # Read a reference file.
                     if len(self._unknown_files) > 0:
                         # There are still files that haven't been read, read one of them next.

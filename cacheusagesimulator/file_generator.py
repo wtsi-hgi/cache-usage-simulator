@@ -3,7 +3,7 @@ import random
 from cacheanalysis.models import BlockFile
 from math import ceil
 
-from cacheusagesimulator._common import DEFAULT_BLOCKS_PER_FILE,  DEFAULT_BLOCK_SIZE, \
+from cacheusagesimulator._common import DEFAULT_BLOCKS_PER_FILE, DEFAULT_BLOCK_SIZE, \
     DEFAULT_BLOCKS_PER_FILE_SPREAD
 
 
@@ -37,8 +37,11 @@ class BlockFileGenerator:
         """
         return BlockFile(
             md5(),
-            [md5() for i in range(ceil(random.gauss(self.mean_blocks_per_file,
-                                                    self.blocks_per_file_spread)))]
+            [md5() for _ in range(ceil(
+                random.gauss(self.mean_blocks_per_file,
+                             self.blocks_per_file_spread if self.blocks_per_file_spread >= 0 else 0
+                )
+            ))]
         )
 
     def _create_random_block(self) -> bytearray:
@@ -46,4 +49,4 @@ class BlockFileGenerator:
         Creates a random block of bytes.
         :return: the generated block
         """
-        return bytearray((random.getrandbits(8) for i in range(self.bytes_per_block)))
+        return bytearray(random.getrandbits(8) for _ in range(self.bytes_per_block))
